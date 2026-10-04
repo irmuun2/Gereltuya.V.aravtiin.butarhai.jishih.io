@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Аравтын бутархайг жиших</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Nunito:wght@400;600;700;800;900&display=swap">
+<style>
+:root{
+  --track:#c63f2c; --track-d:#9a2c1d; --track-l:#e0644f; --track-soft:#fde6e1;
+  --grass:#2f8f3a; --grass-d:#1f6b29; --grass-l:#3fa64b; --grass-soft:#e2f4df;
+  --gold:#f2b705; --gold-d:#c48f00; --gold-soft:#fff4cc;
+  --silver:#a9b3bd; --silver-d:#7d8893; --bronze:#c27a3a; --bronze-d:#965a24;
+  --blue:#1f5fa8; --blue-soft:#e1ecf9;
+  --ink:#1c241d; --muted:#556357; --line:#d9e2d6; --card:#ffffff;
+  --ok:#1e8a3c; --no:#d32f2f;
+  --shadow:0 10px 24px rgba(10,40,15,.28);
+  --hfont:"Russo One","Nunito",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{color:var(--ink);font-family:"Nunito","Segoe UI",system-ui,sans-serif;font-size:20px;line-height:1.38;overflow:hidden;
+  background-color:#33923d;background-image:repeating-linear-gradient(90deg,#379a42 0 80px,#2f8a39 80px 160px)}
+button{font:inherit;cursor:pointer}
+
+/* ===== Header: red running track ===== */
+.top{position:fixed;inset:0 0 auto 0;height:64px;display:grid;grid-template-columns:auto 1fr auto;align-items:stretch;z-index:20;
+  background:var(--track);color:#fff;border-bottom:4px solid #fff;box-shadow:0 4px 0 var(--track-d)}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:14px;height:2px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.55) 0 26px,transparent 26px 40px);pointer-events:none}
+.tb{display:flex;align-items:center;gap:10px;padding:0 16px;position:relative;z-index:1}
+.tb .lbl{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#ffd9d2;display:block;font-weight:800}
+.tb .val{font-family:var(--hfont);font-size:20px;white-space:nowrap}
+.tb.mid{min-width:0;overflow:hidden;border-left:3px solid rgba(255,255,255,.5);border-right:3px solid rgba(255,255,255,.5)}
+.tb.mid .val{overflow:hidden;text-overflow:ellipsis;display:block}
+.medals{display:flex;gap:5px}
+.medals span{font-size:13px;font-weight:800;padding:3px 8px;border:2px solid rgba(255,255,255,.5);border-radius:20px;color:#ffe3dd;white-space:nowrap}
+.medals span.on{background:var(--gold);color:#3a2a00;border-color:#fff}
+.timer{font-family:var(--hfont);font-size:24px;font-variant-numeric:tabular-nums;color:#fff;background:var(--track-d);padding:2px 10px;border-radius:6px;cursor:pointer}
+.timer.warn{color:var(--gold)}.timer.over{color:#ffb4a8}
+.tbtn{border:2px solid rgba(255,255,255,.55);background:transparent;border-radius:6px;padding:4px 10px;font-weight:800;font-size:15px;color:#fff}
+.tbtn:hover{background:#fff;color:var(--track)}
+
+/* ===== Slides ===== */
+.deck{position:absolute;inset:76px 0 72px 0;z-index:1}
+.slide{position:absolute;inset:0;overflow:auto;padding:10px clamp(16px,3.5vw,48px) 16px;opacity:0;visibility:hidden;transform:translateX(30px);transition:opacity .35s,transform .35s,visibility .35s}
+.slide.active{opacity:1;visibility:visible;transform:none}
+.inner{max-width:1280px;margin:0 auto}
+h2{font-family:var(--hfont);font-weight:400;font-size:clamp(26px,2.8vw,38px);margin:0 0 4px;display:flex;align-items:center;gap:12px;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.3)}
+h3{font-size:21px;margin:0 0 6px;font-weight:900}
+.sub{color:#f4fff2;margin:0 0 10px;font-size:19px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.tag{display:inline-block;font-family:var(--hfont);letter-spacing:1px;font-size:15px;color:#fff;background:var(--track);padding:3px 14px;border-radius:20px;margin-bottom:4px;border:2px solid #fff}
+.card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:14px 18px;position:relative}
+.card.lane{border-top:8px solid var(--track)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:none;border-radius:8px;padding:9px 16px;font-weight:800;background:var(--track);color:#fff;box-shadow:0 4px 0 var(--track-d);transition:transform .1s,filter .15s}
+.btn:hover{filter:brightness(1.1)}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--track-d)}
+.btn[disabled]{opacity:.4;cursor:default}
+.btn.gold{background:var(--gold);color:#3a2a00;box-shadow:0 4px 0 var(--gold-d)}
+.btn.grn{background:var(--grass);box-shadow:0 4px 0 var(--grass-d)}
+.btn.blue{background:var(--blue);box-shadow:0 4px 0 #13467f}
+.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+.btn.ghost.on{background:var(--gold-soft);border-color:var(--gold-d)}
+.btn.sm{padding:6px 12px;font-size:16px}
+.btn.big{font-family:var(--hfont);font-size:30px;padding:4px 20px;min-width:64px}
+.def{padding:8px 12px;margin:6px 0;background:var(--grass-soft);border-left:6px solid var(--grass);border-radius:4px}
+.def.r{background:var(--track-soft);border-color:var(--track)}.def.y{background:var(--gold-soft);border-color:var(--gold-d)}.def.b{background:var(--blue-soft);border-color:var(--blue)}
+.feedback{font-size:19px;font-weight:800;min-height:28px;margin-top:6px}
+.feedback.ok{color:var(--ok)}.feedback.no{color:var(--no)}
+.muted{color:var(--muted)}
+.num{font-family:var(--hfont);letter-spacing:.5px}
+
+/* ===== Nav ===== */
+.nav{position:fixed;inset:auto 0 0 0;height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;z-index:20;gap:10px;background:var(--track);border-top:4px solid #fff;box-shadow:0 -4px 0 var(--track-d)}
+.nav .btn{background:#fff;color:var(--track-d);box-shadow:0 4px 0 rgba(0,0,0,.3)}
+.dots{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.dot{min-width:40px;height:32px;border:2px solid rgba(255,255,255,.55);border-radius:16px;background:transparent;color:#ffe3dd;font-family:var(--hfont);font-size:14px;transition:.2s}
+.dot.on{background:var(--gold);color:#3a2a00;border-color:#fff}
+.dot.done{background:rgba(255,255,255,.2);color:#fff}
+.tnotes{position:fixed;right:18px;bottom:78px;width:min(440px,calc(100vw - 36px));background:#fffbe8;border:3px solid var(--gold);border-radius:10px;padding:14px 18px;font-size:16px;box-shadow:var(--shadow);z-index:25;display:none;max-height:calc(100vh - 170px);overflow:auto}
+.tnotes.show{display:block}
+.tnotes h4{margin:0 0 6px;font-size:17px}
+.tnotes ul{margin:0;padding-left:20px}
+
+/* ===== Intro: stadium oval ===== */
+.intro{min-height:calc(100vh - 190px);display:flex;align-items:center;justify-content:center}
+.oval{background:var(--track);border-radius:240px;padding:34px;max-width:1020px;width:100%;box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.oval .in{background:repeating-linear-gradient(90deg,#3fa64b 0 56px,#35963f 56px 112px);border-radius:200px;padding:26px 70px;text-align:center;color:#fff;
+  box-shadow:0 0 0 3px #fff,0 0 0 11px var(--track),0 0 0 13px #fff,0 0 0 21px var(--track),0 0 0 23px #fff}
+.oval .school{font-weight:900;font-size:clamp(18px,2vw,24px);background:rgba(0,0,0,.2);display:inline-block;padding:3px 16px;border-radius:20px}
+.oval .subject{font-family:var(--hfont);font-size:clamp(48px,6.6vw,88px);line-height:1.05;margin:8px 0 2px;text-shadow:0 4px 0 var(--grass-d)}
+.oval .topic{font-family:var(--hfont);font-size:clamp(28px,3.4vw,44px);color:var(--gold);text-shadow:0 3px 0 rgba(0,0,0,.35)}
+.oval .event{font-size:clamp(17px,1.8vw,22px);font-weight:800;margin-top:4px}
+.oval .teacher{margin-top:12px;font-size:clamp(18px,2vw,24px);font-weight:900;background:#fff;color:var(--track-d);display:inline-block;padding:5px 20px;border-radius:24px}
+.oval .meds{font-size:40px;letter-spacing:10px;margin-top:6px}
+
+/* ===== Opening ===== */
+.stadium svg{width:100%;height:auto;display:block;max-height:calc(100vh - 300px)}
+.duel{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.duel .btn{flex:1;min-width:150px}
+.duel .btn.ok{background:var(--ok);box-shadow:0 4px 0 #125c27}.duel .btn.no{background:#9e9e9e;box-shadow:0 4px 0 #6d6d6d}
+
+/* ===== 100-grid ===== */
+.gwrap{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center}
+.gcard{text-align:center;padding:10px 12px}
+.gcard svg{width:100%;height:auto;max-height:calc(100vh - 395px);display:block;margin:0 auto;cursor:pointer;touch-action:none}
+.gcard .who{font-weight:900;font-size:20px}
+.gcard .tgt{font-family:var(--hfont);font-size:30px}
+.gcard .live{font-weight:800;font-size:17px;color:var(--muted)}
+.gcard .live.ok{color:var(--ok)}
+.signs{display:flex;flex-direction:column;gap:10px;align-items:center}
+.signbig{font-family:var(--hfont);font-size:56px;width:90px;height:90px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);color:var(--track)}
+
+/* ===== Number line ===== */
+.nl svg{width:100%;height:auto;display:block;max-height:calc(100vh - 360px);cursor:crosshair;touch-action:none}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:4px 12px;border-radius:20px;border:2px solid var(--line);font-weight:800;font-size:17px;background:#fff}
+.chip.cur{border-color:var(--track);background:var(--track-soft)}
+.chip.done{border-color:var(--ok);background:var(--grass-soft);color:var(--ok)}
+
+/* ===== Scoreboard ===== */
+.sb{background:#1c1f24;border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);border:5px solid #3a3f47;color:#fff}
+.sb table{border-collapse:separate;border-spacing:6px;width:100%}
+.sb th{font-size:15px;color:#c9d1d9;font-weight:800;text-transform:uppercase}
+.sb td{text-align:center}
+.sb .nm{text-align:left;font-weight:900;font-size:20px;white-space:nowrap}
+.dg{font-family:var(--hfont);font-size:44px;line-height:1;background:#000;color:#ffb627;border-radius:6px;padding:6px 0;min-width:58px;display:inline-block;text-shadow:0 0 10px rgba(255,182,39,.6)}
+.dg.pad{color:#5d4a20;text-shadow:none}
+.dg.pt{background:none;min-width:20px}
+.dg.hl{outline:4px solid #fff}
+.cmpcell{font-family:var(--hfont);font-size:30px;color:#7ee08a;height:38px}
+.cmpcell.dec{color:#ffd54a}
+.myth{background:var(--gold-soft);border:3px dashed var(--gold-d);border-radius:10px;padding:8px 12px;font-weight:700}
+
+/* ===== Bracket ===== */
+.bracket{display:grid;grid-template-columns:1fr 1fr 1fr .85fr;gap:16px;height:calc(100vh - 330px);min-height:300px;max-height:470px}
+.round{display:flex;flex-direction:column;justify-content:space-around;position:relative}
+.round .rt{position:absolute;top:-24px;left:0;right:0;text-align:center;font-weight:900;font-size:15px;color:#fff;text-transform:uppercase;letter-spacing:.5px}
+.match{background:#fff;border-radius:10px;box-shadow:0 5px 12px rgba(0,0,0,.25);border-left:7px solid var(--track);overflow:hidden}
+.ent{display:flex;justify-content:space-between;gap:8px;padding:5px 10px;font-weight:800;font-size:18px;border-bottom:2px dashed var(--line);user-select:none}
+.ent:last-child{border-bottom:none}
+.ent .r{font-family:var(--hfont)}
+.ent.can{cursor:pointer}.ent.can:hover{background:var(--gold-soft)}
+.ent.win{background:var(--grass-soft);color:var(--ok)}
+.ent.lose{color:#9aa39b;text-decoration:line-through}
+.ent.empty{color:#b0b8b1}
+.ent.shake{animation:shake .4s;background:#ffe2e2}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.champ{background:linear-gradient(160deg,#ffe57a,var(--gold));border-radius:14px;text-align:center;padding:14px 8px;box-shadow:var(--shadow);border:4px solid #fff}
+.champ .cup{font-size:54px;line-height:1}
+.champ .cn{font-family:var(--hfont);font-size:24px;color:#3a2a00}
+
+/* ===== Podium ===== */
+.pool{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;min-height:66px;padding:8px;border:3px dashed rgba(255,255,255,.7);border-radius:12px;background:rgba(0,0,0,.12)}
+.rc{background:#fff;border-radius:10px;padding:6px 12px;font-weight:900;box-shadow:0 4px 0 rgba(0,0,0,.25);cursor:grab;user-select:none;touch-action:none;text-align:center;min-width:120px;border:3px solid transparent}
+.rc .v{font-family:var(--hfont);font-size:24px;display:block;color:var(--track-d)}
+.rc .n{font-size:15px}
+.rc.sel{border-color:var(--blue)}
+.rc.ghost{position:fixed;z-index:60;pointer-events:none;transform:rotate(-3deg);opacity:.92}
+.podium{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:end;margin-top:10px}
+.pcol{display:flex;flex-direction:column;align-items:stretch}
+.slot{min-height:72px;border:3px dashed rgba(255,255,255,.8);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;background:rgba(255,255,255,.12)}
+.slot.ok{border:3px solid #7ee08a;background:rgba(126,224,138,.25)}
+.slot.no{border:3px solid #ff8a80;background:rgba(255,138,128,.25)}
+.slot .rc{width:100%}
+.stand{border-radius:8px 8px 0 0;display:flex;align-items:flex-start;justify-content:center;font-family:var(--hfont);font-size:30px;color:#fff;padding-top:6px;text-shadow:0 2px 0 rgba(0,0,0,.3)}
+.st1{height:120px;background:linear-gradient(#ffd54a,var(--gold-d))}
+.st2{height:90px;background:linear-gradient(#d5dbe0,var(--silver-d))}
+.st3{height:68px;background:linear-gradient(#e0a06a,var(--bronze-d))}
+.st4,.st5{height:40px;background:linear-gradient(#9db4a0,#6f8a73);font-size:22px}
+
+/* ===== Practice ===== */
+.keys{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin:8px 0}
+.keys button{border:2px solid var(--line);background:#fff;border-radius:8px;font-family:var(--hfont);font-size:22px;padding:4px 0}
+.keys button.ok{background:var(--grass-soft);border-color:var(--ok);color:var(--ok)}
+.keys button.no{background:#ffe2e2;border-color:var(--no);color:var(--no)}
+.puz{font-family:var(--hfont);font-size:38px;text-align:center;margin:4px 0}
+.puz .star{color:var(--track);background:var(--track-soft);border-radius:6px;padding:0 6px}
+.qpair{font-family:var(--hfont);font-size:40px;text-align:center;margin:8px 0;display:flex;justify-content:center;gap:18px;align-items:center}
+.qpair .box{background:var(--gold-soft);border:3px solid var(--gold-d);border-radius:10px;width:70px;height:58px;display:flex;align-items:center;justify-content:center;color:var(--track)}
+
+/* ===== Exit ===== */
+.exits{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.exits .card{padding:10px 14px}
+.exits .q{font-weight:800;font-size:19px;margin-bottom:6px}
+.pick{border:2px solid var(--line);background:#fff;border-radius:20px;padding:4px 14px;font-weight:900;font-size:19px;font-family:var(--hfont)}
+.pick.on{background:var(--gold-soft);border-color:var(--gold-d)}
+.pick.ok{background:var(--grass-soft);border-color:var(--ok);color:var(--ok)}
+.pick.no{background:#ffe2e2;border-color:var(--no);color:var(--no)}
+.inp{font:inherit;font-family:var(--hfont);font-size:22px;width:120px;text-align:center;border:2px solid var(--line);border-radius:8px;padding:2px 6px}
+.inp.ok{border-color:var(--ok);background:var(--grass-soft)}.inp.no{border-color:var(--no);background:#ffecec}
+.score{font-family:var(--hfont);font-size:26px;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.3)}
+
+/* ===== Final ===== */
+.frames .fr{display:flex;align-items:baseline;gap:8px;margin:8px 0;font-weight:800;font-size:19px;flex-wrap:wrap}
+.frames .fr div[contenteditable]{flex:1;min-width:220px;border-bottom:3px dashed var(--track);outline:none;padding:2px 6px;font-weight:600;color:var(--track-d)}
+.frames .fr div[contenteditable]:empty::before{content:attr(data-ph);color:#a9b4aa}
+.stars3{display:flex;gap:10px}
+.stars3 button{font-size:40px;border:none;background:none;filter:grayscale(1);opacity:.4;transition:.2s}
+.stars3 button.on{filter:none;opacity:1;transform:scale(1.1)}
+.hw li{margin:4px 0}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
+
+@media (max-height:900px){
+  body{font-size:18px}
+  h2{font-size:28px}
+  .sub{font-size:17px;margin-bottom:6px}
+  .card{padding:10px 14px}
+  .def{padding:6px 10px;margin:4px 0;font-size:17px}
+  .dg{font-size:34px;min-width:46px;padding:4px 0}
+  .cmpcell{font-size:24px;height:30px}
+  .sb .nm{font-size:18px}
+  .sb{padding:8px 10px}
+  .gcard .tgt{font-size:26px}
+  .signbig{width:72px;height:72px;font-size:44px}
+  .slot{min-height:62px}
+  .rc .v{font-size:21px}
+  .st1{height:90px}.st2{height:68px}.st3{height:50px}.st4,.st5{height:30px;font-size:18px}
+  .stand{font-size:24px;padding-top:2px}
+  .puz{font-size:32px}.qpair{font-size:34px;margin:4px 0}
+  .ent{font-size:17px;padding:4px 9px}
+  .exits .q{font-size:18px}
+  .oval .in{padding:20px 60px}
+  .oval .meds{font-size:32px}
+}
+@media (max-width:1000px){
+  .medals{display:none}
+  .grid2,.exits{grid-template-columns:1fr !important}
+  .dots{display:none}
+  .bracket{grid-template-columns:1fr 1fr;height:auto;max-height:none}
+  .round{gap:8px}
+  .podium{grid-template-columns:repeat(5,1fr);gap:4px}
+  .oval{border-radius:60px;padding:24px}.oval .in{border-radius:40px;padding:20px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="tb"><span><span class="lbl">Хичээл</span><span class="val">🏟️ Математик · 5-р анги</span></span></div>
+  <div class="tb mid"><span style="min-width:0;width:100%"><span class="lbl">Аравтын аварга шалгаруулах тэмцээн · <span id="sheetNo">1/10</span></span><span class="val" id="stageName"></span></span></div>
+  <div class="tb">
+    <div class="medals" title="Цуглуулсан медаль"><span id="md1">🏅 Бэлтгэл</span><span id="md2">🏅 Шулуун</span><span id="md3">🏅 Самбар</span><span id="md4">🏅 Шигшээ</span><span id="md5">🏅 Тавцан</span></div>
+    <div class="timer" id="timer" title="Хичээлийн үлдсэн хугацаа (2 удаа дарвал 40:00 болно)">⏱ <span id="tval">40:00</span></div>
+    <button class="tbtn" id="tPlay" title="Цаг эхлүүлэх / зогсоох">▶</button>
+    <button class="tbtn" id="notesBtn" title="Багшийн тэмдэглэл (N)">📝</button>
+    <button class="tbtn" id="fsBtn" title="Бүтэн дэлгэц (F)">⛶</button>
+  </div>
+</header>
+
+<main class="deck">
+
+<!-- 1. Intro -->
+<section class="slide" data-name="Танилцуулга" data-min="1"
+  data-notes="Хүүхдүүдтэй мэндэлж, өнөөдрийн хичээл “Аравтын аварга шалгаруулах тэмцээн” болно гэж зарлана.|Тэмцээний шатууд: Нээлт → Бэлтгэл тойрог → 2 сургуулилт → Шигшээ тоглолт → Медаль гардуулах → Барианы шугам.|Дээд талын ▶ товчоор 40 минутын цагийг эхлүүлнэ. Шат бүрийг давахад дээд мөрөнд 🏅 медаль асна.">
+  <div class="inner intro">
+    <div class="oval"><div class="in">
+      <div class="school">🏫 1-р сургууль</div>
+      <div class="subject">Математик</div>
+      <div class="topic">Аравтын бутархайг жиших</div>
+      <div class="event">🏃 Аравтын аварга шалгаруулах тэмцээн 🏃</div>
+      <div class="meds">🥇🥈🥉</div>
+      <div class="teacher">👩‍🏫 Багш: В. Гэрэлтуяа</div>
+    </div></div>
+  </div>
+</section>
+
+<!-- 2. Opening -->
+<section class="slide" data-name="Тэмцээний нээлт" data-min="3"
+  data-notes="Нөхцөл: Сургуулийн спортын наадамд тамирчдын үр дүнг аравтын бутархайгаар бичжээ. Хэн ялсныг тодруулахын тулд бутархайг жиших хэрэгтэй.|Хоёр асуултыг ангиараа гараа өргөж санал өгөөд, дараа нь товч дарна. Хариу: Ану ялна (9.85 < 9.9 — гүйлтэд бага хугацаа ялна); Сараа ялна (2.5 > 2.45).|Олон хүүхэд “9.85 урт тоо тул их” гэж бодож магадгүй — энэ алдааг 5-р слайдад задална.|Дүрмийг онцол: ГҮЙЛТ — бага хугацаа ялна; ХАРАЙЛТ, ШИДЭЛТ — их зай ялна.">
+  <div class="inner">
+    <span class="tag">Нээлт</span>
+    <h2>🏟️ Тэмцээн нээгдлээ! Хэн ялсан бэ?</h2>
+    <p class="sub">Тамирчдын үр дүнг аравтын бутархайгаар бичжээ. Шүүгч болж ялагчийг тодруулъя!</p>
+    <div class="grid2" style="grid-template-columns:1.1fr .9fr;align-items:start">
+      <div class="card stadium" style="padding:8px">
+        <svg viewBox="0 0 520 290" aria-label="Цэнгэлдэх хүрээлэн">
+          <rect x="6" y="6" width="508" height="278" rx="139" fill="#c63f2c"/>
+          <g fill="none" stroke="#fff" stroke-width="2">
+            <rect x="14" y="14" width="492" height="262" rx="131"/>
+            <rect x="26" y="26" width="468" height="238" rx="119"/>
+            <rect x="38" y="38" width="444" height="214" rx="107"/>
+            <rect x="50" y="50" width="420" height="190" rx="95"/>
+          </g>
+          <rect x="60" y="60" width="400" height="170" rx="85" fill="#3a9a44"/>
+          <g fill="#348c3d"><rect x="120" y="60" width="40" height="170"/><rect x="200" y="60" width="40" height="170"/><rect x="280" y="60" width="40" height="170"/><rect x="360" y="60" width="40" height="170"/></g>
+          <line x1="260" y1="6" x2="260" y2="60" stroke="#fff" stroke-width="5"/>
+          <rect x="150" y="85" width="220" height="120" rx="10" fill="#1c1f24" stroke="#3a3f47" stroke-width="4"/>
+          <text x="260" y="108" fill="#c9d1d9" font-size="14" font-weight="800" text-anchor="middle" font-family="Nunito">60 м ГҮЙЛТ (сек)</text>
+          <text x="175" y="142" fill="#fff" font-size="18" font-weight="800" font-family="Nunito">Ану</text>
+          <text x="345" y="142" fill="#ffb627" font-size="26" text-anchor="end" font-family="Russo One">9.85</text>
+          <text x="175" y="180" fill="#fff" font-size="18" font-weight="800" font-family="Nunito">Бат</text>
+          <text x="345" y="180" fill="#ffb627" font-size="26" text-anchor="end" font-family="Russo One">9.9</text>
+          <text x="84" y="150" font-size="34">🏃</text><text x="420" y="150" font-size="34">🏁</text>
+          <text x="236" y="270" font-size="26">🥇</text><text x="266" y="270" font-size="26">🥈</text>
+        </svg>
+      </div>
+      <div>
+        <div class="card lane">
+          <div class="def r">🏃 <b>Гүйлт:</b> <u>бага</u> хугацаа (сек) ялна.</div>
+          <div class="def">🦘 <b>Харайлт, шидэлт:</b> <u>их</u> зай (м) ялна.</div>
+          <h3 style="margin-top:8px">① 60 м гүйлт: Ану 9.85 сек, Бат 9.9 сек</h3>
+          <div class="duel" id="op1"><button class="btn" data-a="1">🏃 Ану</button><button class="btn" data-a="0">🏃 Бат</button></div>
+          <h3>② Уртын харайлт: Сараа 2.5 м, Номин 2.45 м</h3>
+          <div class="duel" id="op2"><button class="btn" data-a="1">🦘 Сараа</button><button class="btn" data-a="0">🦘 Номин</button></div>
+          <div class="feedback" id="opFb"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Warm-up: 100-grid -->
+<section class="slide" data-name="Бэлтгэл тойрог: 100 нүдээр жиших" data-min="5"
+  data-notes="Сурах бичиг 65-р тал (а): квадратыг 100 тэнцүү хэсэгт хувааж будсан хэсгийг жишнэ. 315-р даалгаврын хосууд: 0.6/0.06, 0.7/0.70, 0.11/0.1, 0.03/0.7, 0.07/0.3, 0.4/0.39.|Нөхцөл: тамирчид халаалтын тойргийн хэдэн хэсгийг гүйснийг 100 нүдээр харуулна. Нэг нүд = 0.01, нэг багана = 0.1.|Нүдэн дээр дарахад тэр нүд хүртэл будагдана (баганаар). Хоёр торыг зөв будсаны дараа &lt; = &gt; тэмдгийг сонгоно.|Асуулт: 0.7 ба 0.70 яагаад тэнцүү вэ? (7 багана = 70 нүд). 3 хосыг зөв хийвэл 🏅.">
+  <div class="inner">
+    <span class="tag">Бэлтгэл тойрог</span>
+    <h2>🔥 Халаалтын тойрог: хэн их гүйсэн бэ?</h2>
+    <p class="sub">Тамирчин бүрийн гүйсэн хэсгийг 100 нүдэнд будаарай. 1 нүд = 0.01, 1 багана = 0.1</p>
+    <div class="gwrap">
+      <div class="card gcard"><div class="who" id="gW0">Ану</div><div class="tgt num" id="gT0" style="color:var(--track)">0.41</div>
+        <svg id="g0" viewBox="0 0 216 216"></svg><div class="live" id="gL0">Будсан: 0</div></div>
+      <div class="signs">
+        <div class="signbig" id="gSign">?</div>
+        <div class="row" style="flex-direction:column;gap:8px">
+          <button class="btn big gold" data-s="&lt;" disabled>&lt;</button>
+          <button class="btn big gold" data-s="=" disabled>=</button>
+          <button class="btn big gold" data-s="&gt;" disabled>&gt;</button>
+        </div>
+      </div>
+      <div class="card gcard"><div class="who" id="gW1">Бат</div><div class="tgt num" id="gT1" style="color:var(--blue)">0.39</div>
+        <svg id="g1" viewBox="0 0 216 216"></svg><div class="live" id="gL1">Будсан: 0</div></div>
+    </div>
+    <div class="row" style="margin-top:8px;justify-content:space-between">
+      <div class="feedback" id="gFb" style="margin:0;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5)">👆 Нүдэн дээр дарж будаарай.</div>
+      <div class="row"><span class="score" id="gCnt" style="font-size:20px">Хос 1/7</span><button class="btn ghost sm" id="gClr">↺ Арилгах</button><button class="btn gold sm" id="gNext">Дараагийн хос ▶</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Training 1: number line zoom -->
+<section class="slide" data-name="Сургуулилт ①: Тоон шулууныг томруулах" data-min="5"
+  data-notes="Сурах бичиг 65-р тал (б): тоон шулуун дээр 0.4 ба 0.7-г тэмдэглэнэ. Баруун тийшээ байх тоо их.|Даалгавар дарааллаар: 0.4, 0.7 → 🔍 томруулж 0.4–0.5 хэсгийг харна → 0.43, 0.47, 0.45.|Гол санаа: 0.45 нь 0.4 ба 0.5-ын ХООРОНД байна, тиймээс 0.45 &lt; 0.5. (Жишээ 2: 5.2 ба 5.3-ын хооронд 5.21…5.29 гэх мэт 9 бутархай бий.)|⭐⭐⭐: дахин томруулж 0.45–0.46 хэсэгт 0.457 ба 0.451-г тэмдэглэнэ (65-р тал (в): 3.457 &gt; 3.451-тэй адил санаа).">
+  <div class="inner">
+    <span class="tag">Сургуулилт ①</span>
+    <h2>🔍 Тоон шулуун — гүйлтийн зам</h2>
+    <p class="sub">Тоог замын зөв цэг дээр дарж тэмдэглээрэй. Баруун тийш явах тусам тоо ихэснэ.</p>
+    <div class="card nl" style="padding:8px 12px">
+      <div class="row" style="justify-content:space-between">
+        <div class="chips" id="nlChips"></div>
+        <div class="row"><button class="btn gold sm" id="nlIn">🔍 Томруулах</button><button class="btn ghost sm" id="nlOut">🔎 Жижигрүүлэх</button><button class="btn ghost sm" id="nlRst">↺</button></div>
+      </div>
+      <svg id="nlSvg" viewBox="0 0 1000 250"></svg>
+      <div class="row" style="justify-content:space-between">
+        <div class="feedback" id="nlFb" style="margin:0">👉 <b>0.4</b>-ийг тэмдэглээрэй.</div>
+        <div class="muted" id="nlRange" style="font-weight:800">Хэсэг: 0 — 1</div>
+      </div>
+    </div>
+    <div class="def y" id="nlConc" style="margin-top:8px">💡 Тоон шулуун дээр <b>баруун талд</b> байгаа тоо нь <b>их</b>.</div>
+  </div>
+</section>
+
+<!-- 5. Training 2: place-value scoreboard -->
+<section class="slide" data-name="Сургуулилт ②: Орон ангийн онооны самбар" data-min="6"
+  data-notes="Сурах бичиг 65-р тал (в) ба Жишээ 1: орон ангийн хүснэгтэд бичээд зүүнээс баруун тийш орон бүрээр жишнэ: бүхэл → аравны → зууны → мянганы.|Эхлээд ангиараа санал өгнө (товч), дараа нь “▶ Дараагийн орон”-оор алхам алхмаар шалгана.|Гол алдаа: 0.5 ба 0.45. “Цифр олонтой нь их” гэж боддог. “0 нэмэх” товчоор 0.5 = 0.50 болгож 50 зуны хэсэг &gt; 45 зуны хэсэг гэж харуулна.|Хариунууд: 0.5 &gt; 0.45; 3.457 &gt; 3.451; 8.9 &gt; 8.32; 2.05 &lt; 2.5; 0.7 = 0.70; 1.249 &lt; 1.29. 🎲 товч санамсаргүй хос гаргана. 3 зөв санал → 🏅.">
+  <div class="inner">
+    <span class="tag">Сургуулилт ②</span>
+    <h2>📟 Онооны самбар: орон бүрээр жишье</h2>
+    <div class="grid2" style="grid-template-columns:1.25fr .75fr;align-items:start">
+      <div>
+        <div class="sb">
+          <table>
+            <tr><th style="text-align:left">Тамирчин</th><th>Бүхэл</th><th></th><th>Аравны</th><th>Зууны</th><th>Мянганы</th></tr>
+            <tr id="sbA"></tr>
+            <tr id="sbC"></tr>
+            <tr id="sbB"></tr>
+          </table>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn gold sm" id="sbPad">0️⃣ 0 нэмж тэгшлэх</button>
+          <button class="btn sm" id="sbStep">▶ Дараагийн орон</button>
+          <button class="btn ghost sm" id="sbNext">Дараагийн хос ▶</button>
+          <button class="btn blue sm" id="sbRnd">🎲 Шинэ хос</button>
+        </div>
+      </div>
+      <div>
+        <div class="card lane">
+          <h3>🗳️ Аль нь их вэ? Эхлээд таа!</h3>
+          <div class="row" id="sbVote"></div>
+          <div class="feedback" id="sbFb"></div>
+        </div>
+        <div class="myth" style="margin-top:10px">⚠️ <b>Урт тоо их гэсэн үг биш!</b><br>0.45-д 3 цифр, 0.5-д 2 цифр байгаа ч <b>0.5 = 0.50 &gt; 0.45</b>.</div>
+        <div class="def b" style="font-size:17px">📏 Эхлээд <b>бүхэл</b> хэсэг, тэнцүү бол <b>аравны</b>, дараа нь <b>зууны</b>, <b>мянганы</b> хэсгийг жишнэ.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Knockout bracket -->
+<section class="slide" data-name="Шигшээ тоглолт: 8 тамирчны хасагдах тойрог" data-min="7"
+  data-notes="8 тамирчин хосоороо уралдана. Тоглолт бүрд ЯЛАГЧИЙН нэр дээр дарна — тэр дараагийн шатанд шилжинэ.|Төрлөө анхаар! 🦘 Уртын харайлт — их нь ялна. 🏃 60 м гүйлт — БАГА нь ялна (9.85 &lt; 9.9 тул Ану түрүүлнэ).|Урхи: 3.405 ба 3.45 (3.45 их), 3.09 ба 2.95, 9.7 ба 9.69 (гүйлтэд 9.69 ялна), 10.1 ба 10.09.|Хариу: Харайлтын аварга Тэмүүлэн (3.5 м). Гүйлтийн аварга Болд (9.69 сек). Хүүхдүүдийг ээлжлэн самбарт гаргаж, тэмдгээ чангаар хэлүүлнэ.">
+  <div class="inner">
+    <span class="tag">Шигшээ</span>
+    <h2>🏆 Хасагдах тойрог — аварга хэн бэ?</h2>
+    <div class="row" style="margin-bottom:30px;justify-content:space-between">
+      <div class="row"><button class="btn ghost sm on" data-ev="0">🦘 Уртын харайлт (м)</button><button class="btn ghost sm" data-ev="1">🏃 60 м гүйлт (сек)</button><button class="btn ghost sm" id="bRst">↺</button></div>
+      <div class="def y" id="bRule" style="margin:0;font-weight:800">🦘 Их зай ялна!</div>
+    </div>
+    <div class="bracket" id="bracket"></div>
+    <div class="feedback" id="bFb" style="background:#fff;border-radius:8px;padding:4px 12px;display:inline-block;margin-top:8px">👆 Хос бүрийн ялагчийн нэр дээр дарна уу.</div>
+  </div>
+</section>
+
+<!-- 7. Medal ceremony: podium -->
+<section class="slide" data-name="Медаль гардуулах ёслол" data-min="5"
+  data-notes="Сурах бичиг 66-р тал, 318, 319-р даалгавар (өсөх / буурах эрэмбэ).|Үр дүнгийн картыг чирж (эсвэл дарж сонгоод байрын дээр дарж) 1–5-р байранд байрлуулна. “✓ Шалгах”.|⭐ Харайлт: 3.5 &gt; 3.45 &gt; 3.4 &gt; 3.38 &gt; 3.05. Гүйлт (бага нь түрүүлнэ): 9.08 &lt; 9.75 &lt; 9.79 &lt; 9.8 &lt; 10.1.|⭐⭐⭐ Бөмбөг шидэлт (319е-ийн тоонууд): 5.576 &gt; 5.55 &gt; 5.5 &gt; 5.125 &gt; 5.06.">
+  <div class="inner">
+    <span class="tag">Медаль</span>
+    <h2>🥇 Медаль гардуулах ёслол</h2>
+    <div class="row" style="justify-content:space-between;margin-bottom:6px">
+      <div class="row" id="pdEv"><button class="btn ghost sm on" data-r="0">⭐ 🦘 Уртын харайлт</button><button class="btn ghost sm" data-r="1">⭐ 🏃 60 м гүйлт</button><button class="btn ghost sm" data-r="2">⭐⭐⭐ ⚾ Бөмбөг шидэлт</button></div>
+      <div class="def y" id="pdRule" style="margin:0;font-weight:800">Их зай → 1-р байр</div>
+    </div>
+    <div class="pool" id="pool"></div>
+    <div class="podium" id="podium">
+      <div class="pcol"><div class="slot" data-p="4"></div><div class="stand st4">4</div></div>
+      <div class="pcol"><div class="slot" data-p="2"></div><div class="stand st2">🥈 2</div></div>
+      <div class="pcol"><div class="slot" data-p="1"></div><div class="stand st1">🥇 1</div></div>
+      <div class="pcol"><div class="slot" data-p="3"></div><div class="stand st3">🥉 3</div></div>
+      <div class="pcol"><div class="slot" data-p="5"></div><div class="stand st5">5</div></div>
+    </div>
+    <div class="row" style="margin-top:8px;justify-content:space-between">
+      <div class="feedback" id="pdFb" style="background:#fff;border-radius:8px;padding:4px 12px;margin:0">✋ Картыг чирж байранд нь тавиарай.</div>
+      <div class="row"><button class="btn ghost sm" id="pdRst">↺ Дахин</button><button class="btn gold" id="pdChk">✓ Шалгах</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. Extra events: differentiation -->
+<section class="slide" data-name="Нэмэлт төрөл: ⭐ ба ⭐⭐⭐" data-min="4"
+  data-notes="Ялгаатай сургалт: ⭐ — хурдан харьцуулалт (санамсаргүй тоо, бүхэл хэсэг ижил). ⭐⭐⭐ — сурах бичгийн 317-р даалгавар: “∗”-ны оронд тэнцэтгэл бишийг үнэн болгох цифрүүд.|317 хариу: а) 2.∗5 &gt; 2.05 → 1–9; б) 3.58 &lt; 3.∗8 → 6–9; в) 4.96 &lt; ∗.96 → 5–9; г) 0.732 &gt; 0.7∗9 → 0, 1, 2.|Хүүхэд түвшнээ өөрөө сонгоно. ⭐-ыг хурдан хийсэн нь ⭐⭐⭐ руу шилжинэ.">
+  <div class="inner">
+    <span class="tag">Нэмэлт төрөл</span>
+    <h2>🎯 Нэмэлт уралдаан — түвшнээ сонго!</h2>
+    <div class="grid2" style="align-items:start">
+      <div class="card lane">
+        <h3>⭐ Хурдан харьцуулалт</h3>
+        <div class="qpair"><span id="eA">0.6</span><span class="box" id="eS">?</span><span id="eB">0.8</span></div>
+        <div class="row" style="justify-content:center"><button class="btn big gold" data-e="&lt;">&lt;</button><button class="btn big gold" data-e="=">=</button><button class="btn big gold" data-e="&gt;">&gt;</button></div>
+        <div class="feedback" id="eFb" style="text-align:center"></div>
+        <div class="row" style="justify-content:space-between"><span style="font-weight:900">🔥 Дараалсан зөв: <span id="eStreak">0</span></span><button class="btn ghost sm" id="eNew">🎲 Шинэ</button></div>
+      </div>
+      <div class="card" style="border-top:8px solid var(--gold)">
+        <h3>⭐⭐⭐ “∗”-ны оронд ямар цифр? <span class="muted" style="font-size:15px">(317)</span></h3>
+        <div class="puz" id="hPuz"></div>
+        <div class="keys" id="hKeys"></div>
+        <div class="feedback" id="hFb"></div>
+        <div class="row" style="justify-content:space-between"><span style="font-weight:900">Олсон: <span id="hFound">0</span> / <span id="hTot">0</span></span>
+          <div class="row"><button class="btn ghost sm" id="hShow">👀 Хариу</button><button class="btn gold sm" id="hNext">Дараагийн ▶</button></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9. Exit check -->
+<section class="slide" data-name="Барианы шугам: шалгалт" data-min="3"
+  data-notes="Хүүхэд бүр дэвтэр дээрээ хариулаад, дараа нь ангиараа товч дарж шалгана.|Хариу: 1) 0.8 ба 0.67 (316-р даалгавар); 2) Ану (8.65 &lt; 8.7 — гүйлтэд бага нь ялна); 3) 0.5 (0.50 &gt; 0.45); 4) 3.4 ба 3.5-ын хооронд: 3.41, 3.45, 3.49 гэх мэт (322а).|4/4 бол аварга! Алдсан асуултаар сэдвийг богино давтана.">
+  <div class="inner">
+    <span class="tag">Барианы шугам</span>
+    <h2>🏁 Барианы шугам <span class="score" id="xScore" style="margin-left:auto">0 / 4</span></h2>
+    <div class="exits">
+      <div class="card"><div class="q">1. 0.6-аас <u>их</u> тоонуудыг бүгдийг сонго.</div>
+        <div class="row" id="x1"><button class="pick">0.5</button><button class="pick">0.8</button><button class="pick">0.23</button><button class="pick">0.09</button><button class="pick">0.67</button><button class="btn grn sm" id="x1c">✓</button></div>
+        <div class="feedback" id="x1f"></div></div>
+      <div class="card"><div class="q">2. 60 м гүйлт: Сараа 8.7 сек, Ану 8.65 сек. Хэн түрүүлсэн бэ?</div>
+        <div class="row" id="x2"><button class="pick" data-a="0">Сараа</button><button class="pick" data-a="1">Ану</button></div>
+        <div class="feedback" id="x2f"></div></div>
+      <div class="card"><div class="q">3. Аль нь их вэ?</div>
+        <div class="row" id="x3"><button class="pick" data-a="1">0.5</button><button class="pick" data-a="0">0.45</button><button class="pick" data-a="0">Тэнцүү</button></div>
+        <div class="feedback" id="x3f"></div></div>
+      <div class="card"><div class="q">4. 3.4 ба 3.5-ын хооронд орших нэг тоо бич.</div>
+        <div class="row">3.4 &lt; <input class="inp" id="x4" inputmode="decimal" placeholder="?"> &lt; 3.5 <button class="btn grn sm" id="x4c">✓</button></div>
+        <div class="feedback" id="x4f"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10. Homework -->
+<section class="slide" data-name="Шагнал ба гэрийн даалгавар" data-min="1"
+  data-notes="Өгүүлбэрийг ангиараа гүйцээнэ. Одоор өөрийгөө үнэлнэ.|Гэрийн даалгавар: сурах бичгийн 66-р тал — 318 (а, г), 319 (б, д), 322 (б, в). ⭐⭐⭐: 67-р тал 323.|Гэрийнхнийхээ өндрийг (м) аравтын бутархайгаар бичиж, өсөх эрэмбээр жагсаах.">
+  <div class="inner">
+    <span class="tag">Хаалт</span>
+    <h2>🎖️ Тэмцээн өндөрлөлөө!</h2>
+    <div class="grid2" style="grid-template-columns:1.15fr .85fr;align-items:start">
+      <div class="card frames lane">
+        <div class="fr">Аравтын бутархайг жишихдээ эхлээд <div contenteditable="true" data-k="m_dec_f1" data-ph="бүхэл хэсгийг…"></div></div>
+        <div class="fr">Бүхэл хэсэг тэнцүү бол <div contenteditable="true" data-k="m_dec_f2" data-ph="аравны, дараа нь зууны хэсгийг…"></div></div>
+        <div class="fr">Гүйлтэд <div contenteditable="true" data-k="m_dec_f3" data-ph="бага хугацаатай нь ялна…"></div></div>
+        <div class="fr">0.5 ба 0.45-ын аль нь их вэ? <div contenteditable="true" data-k="m_dec_f4" data-ph="…"></div></div>
+      </div>
+      <div class="card" style="border-top:8px solid var(--gold)">
+        <h3>⭐ Өнөөдөр би хэр сайн уралдсан бэ?</h3>
+        <div class="stars3" id="stars3"><button>⭐</button><button>⭐</button><button>⭐</button></div>
+        <div class="def y hw" style="font-size:17px;margin-top:8px">🏠 <b>Гэрийн даалгавар</b> (сурах бичиг 66-р тал):
+          <ul style="margin:4px 0 0;padding-left:20px"><li>318 (а, г) — өсөх эрэмбээр</li><li>319 (б, д) — буурах эрэмбээр</li><li>322 (б, в) — хооронд орших 3 тоо</li><li>⭐⭐⭐ 323 (67-р тал)</li></ul></div>
+        <p style="font-family:var(--hfont);font-size:22px;text-align:center;margin:8px 0 0;color:var(--track-d)">Баярлалаа, аваргууд аа! 🏅</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<nav class="nav">
+  <button class="btn" id="prevBtn">◀ Өмнөх</button>
+  <div class="dots" id="dots"></div>
+  <button class="btn" id="nextBtn">Дараах ▶</button>
+</nav>
+<div class="tnotes" id="tnotes"><h4>📝 Багшид зориулсан зөвлөмж</h4><ul id="tnList"></ul></div>
+<canvas id="confetti"></canvas>
+
+<script>
+/* ---------- Helpers ---------- */
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const $=id=>document.getElementById(id);
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const ri=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const SVGNS='http://www.w3.org/2000/svg';
+function el(tag,attrs,parent,text){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e}
+/* Exact decimal comparison on strings: returns 1, 0, -1 */
+function cmp(a,b){const [wa,fa='']=String(a).split('.'),[wb,fb='']=String(b).split('.');if(+wa!==+wb)return +wa>+wb?1:-1;
+  const L=Math.max(fa.length,fb.length),x=fa.padEnd(L,'0'),y=fb.padEnd(L,'0');return x===y?0:(x>y?1:-1)}
+const signOf=c=>c>0?'>':c<0?'<':'=';
+function fb(id,ok,msg){const f=$(id);f.className='feedback'+(ok===true?' ok':ok===false?' no':'');f.innerHTML=msg}
+
+/* ---------- Medals tracker ---------- */
+const MED={};
+function award(k){if(MED[k])return;MED[k]=true;$('md'+k).classList.add('on');$('md'+k).textContent='🥇'+$('md'+k).textContent.slice(2);confetti(90)}
+
+/* ---------- Slides ---------- */
+const slides=[...document.querySelectorAll('.slide')];const dots=$('dots');let cur=0;
+slides.forEach((s,i)=>{const b=document.createElement('button');b.className='dot';b.textContent=String(i+1).padStart(2,'0');b.title=s.dataset.name;b.onclick=()=>go(i);dots.appendChild(b)});
+function go(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,j)=>s.classList.toggle('active',j===cur));
+  [...dots.children].forEach((d,j)=>{d.classList.toggle('on',j===cur);d.classList.toggle('done',j<cur)});
+  const s=slides[cur];
+  $('stageName').textContent=s.dataset.name;$('sheetNo').textContent=(cur+1)+'/'+slides.length;
+  $('tnList').innerHTML='<li>⏱ Зөвлөмж хугацаа: ≈'+s.dataset.min+' мин</li>'+s.dataset.notes.split('|').map(t=>'<li>'+t+'</li>').join('');
+  $('prevBtn').disabled=cur===0;$('nextBtn').textContent=cur===slides.length-1?'🏁 Төгсгөл':'Дараах ▶';
+  if(s.contains($('nlSvg')))nlDraw();
+}
+$('prevBtn').onclick=()=>go(cur-1);$('nextBtn').onclick=()=>{if(cur===slides.length-1)confetti(140);go(cur+1)};
+document.addEventListener('keydown',e=>{
+  const t=e.target;if(t&&(t.isContentEditable||t.tagName==='INPUT'||t.tagName==='TEXTAREA'))return;
+  if(e.key==='ArrowRight'||e.key==='PageDown')go(cur+1);
+  else if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);
+  else if(e.key==='f'||e.key==='F')toggleFS();
+  else if(e.key==='n'||e.key==='N')toggleNotes();
+});
+function toggleFS(){if(!document.fullscreenElement){if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen()}else if(document.exitFullscreen)document.exitFullscreen()}
+function toggleNotes(){$('tnotes').classList.toggle('show')}
+$('fsBtn').onclick=toggleFS;$('notesBtn').onclick=toggleNotes;
+
+/* ---------- Timer ---------- */
+let remain=40*60,running=false,tick=null;
+function drawT(){const a=Math.abs(remain),m=Math.floor(a/60),s=a%60;$('tval').textContent=(remain<0?'+':'')+m+':'+String(s).padStart(2,'0');$('timer').className='timer'+(remain<0?' over':remain<=300?' warn':'')}
+$('tPlay').onclick=()=>{running=!running;$('tPlay').textContent=running?'⏸':'▶';if(running)tick=setInterval(()=>{remain--;drawT()},1000);else clearInterval(tick)};
+$('timer').ondblclick=()=>{remain=40*60;drawT()};drawT();
+
+/* ---------- Editable frames ---------- */
+document.querySelectorAll('[data-k]').forEach(e=>{const k=e.dataset.k;e.textContent=store.get(k)||'';e.addEventListener('input',()=>store.set(k,e.innerText))});
+
+/* ================= Opening duels ================= */
+const opDone={};
+['op1','op2'].forEach((id,qi)=>{const bs=[...$(id).querySelectorAll('.btn')];bs.forEach(b=>b.onclick=()=>{
+  const ok=b.dataset.a==='1';bs.forEach(x=>{x.classList.remove('ok','no');x.classList.add(x.dataset.a==='1'?'ok':'no')});
+  const exp=qi===0?'9.85 &lt; 9.9 — гүйлтэд <b>бага</b> хугацаа ялна. Ану түрүүлэв!':'2.5 = 2.50 &gt; 2.45 — харайлтад <b>их</b> зай ялна. Сараа түрүүлэв!';
+  fb('opFb',ok,(ok?'🎉 Зөв! ':'🤔 Анхаар! ')+exp);if(ok&&!opDone[qi]){opDone[qi]=1;confetti(40)}})});
+
+/* ================= Warm-up: 100-grid ================= */
+const GP=[[41,39,'0.41','0.39','Ану','Бат'],[60,6,'0.6','0.06','Сараа','Номин'],[70,70,'0.7','0.70','Болд','Мөнх'],[11,10,'0.11','0.1','Тэмүүлэн','Үүрцайх'],[3,70,'0.03','0.7','Ану','Сараа'],[7,30,'0.07','0.3','Бат','Болд'],[40,39,'0.4','0.39','Номин','Мөнх']];
+const GCOL=['#d0452f','#1f5fa8'];let gi=0,gv=[0,0];const gSolved=new Set();const gCells=[[],[]];
+[0,1].forEach(side=>{const svg=$('g'+side);el('rect',{x:0,y:0,width:216,height:216,fill:'#fff',stroke:'#1c241d','stroke-width':2},svg);
+  for(let k=0;k<100;k++){const col=Math.floor(k/10),row=k%10;const r=el('rect',{x:3+col*21,y:3+row*21,width:20,height:20,fill:'#fff',stroke:'#b9c4ba','stroke-width':1},svg);
+    r.addEventListener('click',()=>{gv[side]=(gv[side]===k+1)?k:k+1;gPaint()});gCells[side].push(r)}
+  for(let c=1;c<10;c++)el('line',{x1:3+c*21-0.5,y1:3,x2:3+c*21-0.5,y2:213,stroke:'#55635a','stroke-width':1.5,'pointer-events':'none'},svg)});
+function gLoad(){const p=GP[gi];gv=[0,0];$('gW0').textContent='🏃 '+p[4];$('gW1').textContent='🏃 '+p[5];$('gT0').textContent=p[2];$('gT1').textContent=p[3];
+  $('gSign').textContent='?';$('gCnt').textContent='Хос '+(gi+1)+'/'+GP.length;fb('gFb',null,'👆 Нүдэн дээр дарж будаарай: '+p[2]+' ба '+p[3]);$('gFb').style.color='#fff';gPaint()}
+function gPaint(){const p=GP[gi];[0,1].forEach(s=>{gCells[s].forEach((r,k)=>r.setAttribute('fill',k<gv[s]?GCOL[s]:'#fff'));
+    const n=gv[s],cols=Math.floor(n/10),rest=n%10,L=$('gL'+s);L.textContent='Будсан: '+(n/100).toFixed(2)+'  ('+cols+' багана + '+rest+' нүд)';L.classList.toggle('ok',n===p[s])});
+  const ready=gv[0]===p[0]&&gv[1]===p[1];document.querySelectorAll('.signs [data-s]').forEach(b=>b.disabled=!ready);
+  if(ready){fb('gFb',true,'✅ Хоёуланг зөв будлаа! Одоо тэмдгээ сонго.');$('gFb').style.color='#fff'}}
+document.querySelectorAll('.signs [data-s]').forEach(b=>b.onclick=()=>{const p=GP[gi],right=signOf(p[0]-p[1]),s=b.dataset.s;$('gSign').textContent=s;
+  if(s===right){fb('gFb',true,'🎉 Зөв! '+p[2]+' '+right+' '+p[3]+(right==='='?' — будсан хэсэг яг ижил!':' — '+(right==='>'?p[4]:p[5])+' их гүйсэн.'));$('gFb').style.color='#fff';
+    if(!gSolved.has(gi)){gSolved.add(gi);confetti(30);if(gSolved.size>=3)award(1)}}
+  else{fb('gFb',false,'🤔 Будсан нүдээ тоолоод дахин хар: '+p[0]+' нүд ба '+p[1]+' нүд.');$('gFb').style.color='#ffe0dc'}});
+$('gClr').onclick=()=>{gv=[0,0];gPaint()};
+$('gNext').onclick=()=>{gi=(gi+1)%GP.length;gLoad()};
+gLoad();
+
+/* ================= Training 1: number line zoom ================= */
+const NL={x0:60,x1:940,y:120},LV=[[0,1000],[400,500],[450,460]],STEP=[100,10,1];
+const TASKS=[{v:400,L:0},{v:700,L:0},{v:430,L:1},{v:470,L:1},{v:450,L:1},{v:457,L:2},{v:451,L:2}];
+const TMSG={1:'✅ 0.7 нь 0.4-ийн <b>баруун</b> талд → <b>0.7 &gt; 0.4</b>. Одоо 🔍 томруулж 0.4–0.5 хэсгийг харъя!',
+  3:'✅ <b>0.47 &gt; 0.43</b> — баруун тал нь их.',4:'✅ 0.45 нь 0.4 ба 0.5-ын <b>хооронд</b> байна → <b>0.45 &lt; 0.5</b>! ⭐⭐⭐ Дахин 🔍 томруулж үзэх үү?',
+  6:'🏆 <b>0.457 &gt; 0.451</b> — мянганы хэсэг 7 &gt; 1.'};
+let nlLevel=0,nlLo=0,nlHi=1000,nlTask=0,nlWrong=null,nlAnim=null;
+const fmtV=v=>{let s=(v/1000).toFixed(3);s=s.replace(/0+$/,'').replace(/\.$/,'');return s};
+function nlChips(){$('nlChips').innerHTML=TASKS.map((t,i)=>`<span class="chip${i<nlTask?' done':i===nlTask?' cur':''}">${t.L===2?'⭐⭐⭐ ':''}${fmtV(t.v)}${i<nlTask?' ✓':''}</span>`).join('')}
+function nlX(v){return NL.x0+(v-nlLo)/(nlHi-nlLo)*(NL.x1-NL.x0)}
+function nlDraw(){const svg=$('nlSvg');svg.innerHTML='';const W=NL.x1-NL.x0,y=NL.y;
+  el('rect',{x:20,y:y-26,width:960,height:52,rx:26,fill:'#c63f2c'},svg);
+  el('line',{x1:30,y1:y-26,x2:970,y2:y-26,stroke:'#fff','stroke-width':3},svg);el('line',{x1:30,y1:y+26,x2:970,y2:y+26,stroke:'#fff','stroke-width':3},svg);
+  el('line',{x1:NL.x0,y1:y,x2:NL.x1,y2:y,stroke:'#fff','stroke-width':4},svg);
+  if(nlLevel===0&&nlTask>=2){el('rect',{x:nlX(400),y:y-34,width:nlX(500)-nlX(400),height:68,fill:'rgba(242,183,5,.25)',stroke:'#f2b705','stroke-width':3,rx:6},svg)}
+  const gs=[1000,100,10,1],hs=[30,24,17,10];let labG=null;
+  for(let i=gs.length-1;i>=0;i--){if(gs[i]/(nlHi-nlLo)*W>=58){labG=gs[i];break}}
+  gs.forEach((g,i)=>{const sp=g/(nlHi-nlLo)*W;if(sp<5)return;for(let v=Math.ceil(nlLo/g-1e-9)*g;v<=nlHi+1e-6;v+=g){const x=nlX(v);el('line',{x1:x,y1:y-hs[i],x2:x,y2:y+hs[i],stroke:'#fff','stroke-width':i<2?3:2},svg)}});
+  if(labG){for(let v=Math.ceil(nlLo/labG-1e-9)*labG;v<=nlHi+1e-6;v+=labG){const x=nlX(v);el('text',{x,y:y+58,'text-anchor':'middle','font-size':24,'font-family':'Russo One',fill:'#1c241d'},svg,fmtV(Math.round(v)))}}
+  const cols=['#1f5fa8','#1f5fa8','#2f8f3a','#2f8f3a','#f2b705','#7b3fa8','#7b3fa8'];
+  for(let i=0;i<nlTask;i++){const v=TASKS[i].v;if(v<nlLo-1e-6||v>nlHi+1e-6)continue;const x=nlX(v);
+    el('line',{x1:x,y1:y-4,x2:x,y2:y-60,stroke:'#1c241d','stroke-width':3},svg);
+    el('path',{d:`M${x} ${y-60} L${x+44} ${y-60} L${x+44} ${y-34} L${x} ${y-34} Z`,fill:cols[i],stroke:'#fff','stroke-width':2},svg);
+    el('text',{x:x+22,y:y-41,'text-anchor':'middle','font-size':14,'font-family':'Russo One',fill:'#fff'},svg,fmtV(v));
+    el('circle',{cx:x,cy:y,r:8,fill:cols[i],stroke:'#fff','stroke-width':3},svg)}
+  if(nlWrong!=null&&nlWrong>=nlLo&&nlWrong<=nlHi){const x=nlX(nlWrong);el('text',{x,y:y+9,'text-anchor':'middle','font-size':28,fill:'#fff','font-weight':900},svg,'✖')}
+  el('text',{x:18,y:236,'font-size':18,'font-family':'Nunito','font-weight':800,fill:'#556357'},svg,'⬅ бага');
+  el('text',{x:982,y:236,'text-anchor':'end','font-size':18,'font-family':'Nunito','font-weight':800,fill:'#556357'},svg,'их ➡');
+  $('nlRange').textContent='Хэсэг: '+fmtV(Math.round(nlLo))+' — '+fmtV(Math.round(nlHi))+'  ·  1 зураас = '+fmtV(STEP[nlLevel]);nlChips()}
+function nlZoom(to){if(to<0||to>2||nlAnim)return;const [a0,b0]=[nlLo,nlHi],[a1,b1]=LV[to];const t0=performance.now();nlLevel=to;nlWrong=null;
+  const stepA=now=>{let k=Math.min(1,(now-t0)/900);k=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    /* geometric interpolation of width keeps the zoom smooth */
+    const w0=b0-a0,w1=b1-a1,w=w0*Math.pow(w1/w0,k),c0=(a0+b0)/2,c1=(a1+b1)/2,ck=w0===w1?c0+(c1-c0)*k:c0+(c1-c0)*((w0-w)/(w0-w1));
+    nlLo=ck-w/2;nlHi=ck+w/2;nlDraw();if(k<1)nlAnim=requestAnimationFrame(stepA);else{nlLo=a1;nlHi=b1;nlAnim=null;nlDraw()}};
+  nlAnim=requestAnimationFrame(stepA)}
+$('nlSvg').addEventListener('pointerdown',e=>{if(nlAnim)return;const svg=$('nlSvg'),pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(svg.getScreenCTM().inverse());
+  if(p.x<NL.x0-25||p.x>NL.x1+25)return;const st=STEP[nlLevel];let v=Math.round((nlLo+(p.x-NL.x0)/(NL.x1-NL.x0)*(nlHi-nlLo))/st)*st;v=Math.max(LV[nlLevel][0],Math.min(LV[nlLevel][1],v));
+  if(nlTask>=TASKS.length){fb('nlFb',true,'🏆 Бүх даалгавар дууслаа! Чи <b>'+fmtV(v)+'</b> дээр дарлаа.');return}
+  const t=TASKS[nlTask];
+  if(t.L>nlLevel){fb('nlFb',false,'🔍 <b>'+fmtV(t.v)+'</b>-ийг олохын тулд эхлээд томруулаарай!');return}
+  if(t.L<nlLevel){fb('nlFb',false,'🔎 <b>'+fmtV(t.v)+'</b> энэ хэсэгт харагдахгүй байна. Жижигрүүлээрэй.');return}
+  if(v===t.v){nlWrong=null;nlTask++;const m=TMSG[nlTask-1];const nx=TASKS[nlTask];
+    fb('nlFb',true,(m||'✅ Зөв!')+(nx&&!m?' Одоо 👉 <b>'+fmtV(nx.v)+'</b>':''));if(nlTask===5)award(2);if(nlTask===7)confetti(60)}
+  else{nlWrong=v;fb('nlFb',false,'✖ Чи <b>'+fmtV(v)+'</b> дээр дарлаа. <b>'+fmtV(t.v)+'</b> нь '+(cmp(fmtV(t.v),fmtV(v))>0?'<b>баруун</b>':'<b>зүүн</b>')+' талд байна.')}
+  nlDraw()});
+$('nlIn').onclick=()=>nlZoom(nlLevel+1);$('nlOut').onclick=()=>nlZoom(nlLevel-1);
+$('nlRst').onclick=()=>{if(nlAnim)return;nlLevel=0;nlLo=0;nlHi=1000;nlTask=0;nlWrong=null;fb('nlFb',null,'👉 <b>0.4</b>-ийг тэмдэглээрэй.');nlDraw()};
+nlDraw();
+
+/* ================= Training 2: place-value scoreboard ================= */
+const SBP=[['Ану','0.5','Бат','0.45'],['Сараа','3.457','Номин','3.451'],['Болд','8.9','Мөнх','8.32'],['Тэмүүлэн','2.05','Үүрцайх','2.5'],['Ану','0.7','Сараа','0.70'],['Бат','1.249','Номин','1.29']];
+let sbi=0,sbPair=SBP[0],sbPadOn=false,sbStepI=-1,sbVoted=false;const sbGood=new Set();
+function sbDigits(v){const [w,f='']=v.split('.');return{w,f}}
+function sbRow(trId,name,v,other){const {w,f}=sbDigits(v);const tr=$(trId);let h=`<td class="nm">🏃 ${name}</td><td><span class="dg" data-c="0">${w}</span></td><td><span class="dg pt">.</span></td>`;
+  for(let i=0;i<3;i++){let d=f[i]||'',cls='dg';if(!d){if(sbPadOn&&i<Math.max(f.length,sbDigits(other).f.length)){d='0';cls+=' pad'}else d='&nbsp;'}h+=`<td><span class="${cls}" data-c="${i+1}">${d}</span></td>`}
+  tr.innerHTML=h}
+function sbRender(){const [na,a,nb,b]=sbPair;sbRow('sbA',na,a,b);sbRow('sbB',nb,b,a);
+  let h='<td></td><td class="cmpcell" id="sc0"></td><td></td><td class="cmpcell" id="sc1"></td><td class="cmpcell" id="sc2"></td><td class="cmpcell" id="sc3"></td>';$('sbC').innerHTML=h;
+  for(let i=0;i<=sbStepI;i++)sbShowCol(i,false);
+  $('sbVote').innerHTML=`<button class="btn sm" data-v="1">${na}: ${a} их</button><button class="btn sm blue" data-v="-1">${nb}: ${b} их</button><button class="btn sm gold" data-v="0">Тэнцүү</button>`;
+  $('sbVote').querySelectorAll('button').forEach(bt=>bt.onclick=()=>sbVote(+bt.dataset.v))}
+function colDigit(v,c){const {w,f}=sbDigits(v);return c===0?+w:+(f[c-1]||'0')}
+function sbShowCol(i,announce){const [na,a,nb,b]=sbPair;const da=colDigit(a,i),db=colDigit(b,i);
+  document.querySelectorAll('#sbA .dg,#sbB .dg').forEach(d=>d.classList.toggle('hl',+d.dataset.c===i&&!d.classList.contains('pt')));
+  const c=$('sc'+i);if(!c)return;const s=signOf(da-db);c.textContent=s==='='?'=':(da>db?'▲':'▼');c.className='cmpcell'+(s==='='?'':' dec');
+  if(announce){const names=['Бүхэл','Аравны','Зууны','Мянганы'];
+    if(s!=='=')fb('sbFb',true,`${names[i]} хэсэг: ${da} ${s} ${db} → <b>${a} ${s} ${b}</b>. Шийдэгдлээ!`);
+    else if(i===3)fb('sbFb',true,`Бүх орон тэнцүү → <b>${a} = ${b}</b>`);
+    else fb('sbFb',null,`${names[i]} хэсэг: ${da} = ${db}. Дараагийн орныг жишье ▶`)}}
+$('sbStep').onclick=()=>{const [,a,,b]=sbPair;if(sbStepI>=0){const da=colDigit(a,sbStepI),db=colDigit(b,sbStepI);if(da!==db||sbStepI===3){fb('sbFb',true,'✅ Хариу аль хэдийн тодорсон. “Дараагийн хос ▶” дарна уу.');return}}
+  sbStepI++;sbShowCol(sbStepI,true)};
+$('sbPad').onclick=()=>{sbPadOn=!sbPadOn;sbRender()};
+function sbVote(v){const [na,a,nb,b]=sbPair;const c=cmp(a,b);
+  if(v===c){fb('sbFb',true,'🎉 Зөв! '+a+' '+signOf(c)+' '+b+'. Одоо орон бүрээр шалгаж батлъя ▶');const key=a+'|'+b;if(!sbGood.has(key)){sbGood.add(key);confetti(30);if(sbGood.size>=3)award(3)}}
+  else fb('sbFb',false,'🤔 Тийм үү? “0 нэмж тэгшлэх”, “▶ Дараагийн орон” товчоор шалгаад үз.')}
+function sbLoad(p){sbPair=p;sbPadOn=false;sbStepI=-1;sbRender();fb('sbFb',null,'Эхлээд санал өгөөрэй 👆')}
+$('sbNext').onclick=()=>{sbi=(sbi+1)%SBP.length;sbLoad(SBP[sbi])};
+function rFrac(len){let s='';for(let i=0;i<len;i++)s+=ri(i===len-1?1:0,9);return s}
+$('sbRnd').onclick=()=>{const w=ri(0,9),la=ri(1,3);let lb=ri(1,3);if(lb===la)lb=la===3?1:la+1;let fa=rFrac(la),fbb=rFrac(lb);
+  if(Math.random()<.5){fbb=fa[0]+fbb.slice(1);if(fbb.length===1&&fbb==='0')fbb='5';if(fbb.length>1&&fbb[fbb.length-1]==='0')fbb=fbb.slice(0,-1)+'3'}
+  const names=shuffle(['Ану','Бат','Сараа','Номин','Болд','Мөнх','Тэмүүлэн','Үүрцайх']);sbLoad([names[0],w+'.'+fa,names[1],w+'.'+fbb])};
+sbLoad(SBP[0]);
+
+/* ================= Knockout bracket ================= */
+const EV=[{dir:1,u:'м',rule:'🦘 Их зай ялна!',e:[['Ану','3.4'],['Бат','3.25'],['Сараа','3.05'],['Тэмүүлэн','3.5'],['Номин','2.95'],['Болд','3.09'],['Үүрцайх','3.45'],['Мөнх','3.405']]},
+          {dir:-1,u:'сек',rule:'🏃 Бага хугацаа ялна!',e:[['Ану','9.85'],['Бат','9.9'],['Сараа','10.2'],['Тэмүүлэн','10.05'],['Номин','9.7'],['Болд','9.69'],['Үүрцайх','10.1'],['Мөнх','10.09']]}];
+let bEv=0,BR=null;
+function bReset(){BR=[EV[bEv].e.map(([n,v])=>({n,v})),[null,null,null,null],[null,null],[null]];$('bRule').textContent=EV[bEv].rule;bRender();fb('bFb',null,'👆 Хос бүрийн ялагчийн нэр дээр дарна уу.')}
+function bRender(){const root=$('bracket');root.innerHTML='';const titles=['Шөвгийн 8','Хагас шигшээ','Шигшээ'];
+  for(let r=0;r<3;r++){const col=document.createElement('div');col.className='round';col.innerHTML=`<div class="rt">${titles[r]}</div>`;
+    for(let m=0;m<(4>>r);m++){const box=document.createElement('div');box.className='match';const a=BR[r][2*m],b=BR[r][2*m+1],w=BR[r+1][m];
+      [a,b].forEach((e,s)=>{const d=document.createElement('div');d.className='ent';
+        if(!e){d.classList.add('empty');d.innerHTML='<span>—</span><span class="r">?</span>'}
+        else{d.innerHTML=`<span>${e.n}</span><span class="r">${e.v}</span>`;if(w)d.classList.add(w===e?'win':'lose');else if(a&&b){d.classList.add('can');d.onclick=()=>bPick(r,m,s,d)}}
+        box.appendChild(d)});col.appendChild(box)}
+    root.appendChild(col)}
+  const ch=document.createElement('div');ch.className='round';const c=BR[3][0];
+  ch.innerHTML=`<div class="rt">Аварга</div><div class="champ"><div class="cup">🏆</div><div class="cn">${c?c.n:'?'}</div><div class="num" style="font-size:22px">${c?c.v+' '+EV[bEv].u:''}</div></div>`;root.appendChild(ch)}
+function bPick(r,m,s,d){const a=BR[r][2*m],b=BR[r][2*m+1],ev=EV[bEv],c=cmp(a.v,b.v);const win=(c*ev.dir>0)?0:1;const sg=signOf(c);
+  if(s===win){const W=[a,b][s];BR[r+1][m]=W;bRender();
+    fb('bFb',true,`✅ ${a.v} ${sg} ${b.v} → <b>${W.n}</b> ${ev.dir>0?'холдуу харайв':'хурдан гүйв'}!`);
+    if(r===2){fb('bFb',true,`🏆 Аварга: <b>${W.n}</b> (${W.v} ${ev.u})! ${ev.dir<0?'Гүйлтэд хамгийн бага хугацаа ялдаг.':''}`);award(4);confetti(120)}}
+  else{d.classList.remove('shake');void d.offsetWidth;d.classList.add('shake');
+    fb('bFb',false,`✋ ${a.v} ${sg} ${b.v}. ${ev.dir>0?'Харайлтад <b>их</b> зай ялна.':'Гүйлтэд <b>бага</b> хугацаа ялна!'} Дахин бод.`)}}
+document.querySelectorAll('[data-ev]').forEach(b=>b.onclick=()=>{bEv=+b.dataset.ev;document.querySelectorAll('[data-ev]').forEach(x=>x.classList.toggle('on',x===b));bReset()});
+$('bRst').onclick=bReset;bReset();
+
+/* ================= Podium ================= */
+const PR=[{dir:1,u:'м',rule:'Их зай → 1-р байр',e:[['Ану','3.4'],['Бат','3.38'],['Сараа','3.5'],['Болд','3.05'],['Номин','3.45']]},
+          {dir:-1,u:'сек',rule:'Бага хугацаа → 1-р байр',e:[['Тэмүүлэн','9.8'],['Мөнх','9.75'],['Үүрцайх','10.1'],['Ану','9.08'],['Болд','9.79']]},
+          {dir:1,u:'м',rule:'Их зай → 1-р байр',e:[['Сараа','5.576'],['Бат','5.125'],['Номин','5.5'],['Мөнх','5.55'],['Тэмүүлэн','5.06']]}];
+let pdR=0,pdSel=null;
+function pdCard(i){const [n,v]=PR[pdR].e[i];const c=document.createElement('div');c.className='rc';c.dataset.i=i;c.innerHTML=`<span class="v">${v} ${PR[pdR].u}</span><span class="n">${n}</span>`;pdDrag(c);return c}
+function pdReset(){const pool=$('pool');pool.innerHTML='';document.querySelectorAll('#podium .slot').forEach(s=>{s.innerHTML='';s.classList.remove('ok','no')});
+  shuffle([0,1,2,3,4]).forEach(i=>pool.appendChild(pdCard(i)));pdSel=null;$('pdRule').textContent=PR[pdR].rule;fb('pdFb',null,'✋ Картыг чирж байранд нь тавиарай.')}
+function pdPlace(card,target){if(!target)return;if(target.classList.contains('slot')){const occ=target.querySelector('.rc');if(occ&&occ!==card)$('pool').appendChild(occ)}
+  target.appendChild(card);card.classList.remove('sel');pdSel=null;document.querySelectorAll('#podium .slot').forEach(s=>s.classList.remove('ok','no'))}
+function pdDrag(c){c.addEventListener('pointerdown',e=>{e.preventDefault();const sx=e.clientX,sy=e.clientY;let ghost=null;
+  const mv=ev=>{if(!ghost&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>6){ghost=c.cloneNode(true);ghost.classList.add('ghost');ghost.style.width=c.offsetWidth+'px';document.body.appendChild(ghost);c.style.opacity=.3}
+    if(ghost){ghost.style.left=(ev.clientX-c.offsetWidth/2)+'px';ghost.style.top=(ev.clientY-25)+'px'}};
+  const up=ev=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);
+    if(ghost){ghost.remove();c.style.opacity='';const under=document.elementFromPoint(ev.clientX,ev.clientY);const t=under&&under.closest('.slot,.pool');pdPlace(c,t)}
+    else{if(pdSel===c){c.classList.remove('sel');pdSel=null}else{if(pdSel)pdSel.classList.remove('sel');pdSel=c;c.classList.add('sel');fb('pdFb',null,'👉 Одоо байраа дарна уу.')}}};
+  document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up)})}
+document.querySelectorAll('#podium .slot, #pool').forEach(s=>s.addEventListener('click',e=>{if(pdSel&&!e.target.closest('.rc'))pdPlace(pdSel,s)}));
+$('pdChk').onclick=()=>{const R=PR[pdR];const order=R.e.map((x,i)=>i).sort((i,j)=>-R.dir*cmp(R.e[i][1],R.e[j][1]));let ok=0,filled=0;
+  document.querySelectorAll('#podium .slot').forEach(s=>{const c=s.querySelector('.rc');s.classList.remove('ok','no');if(!c)return;filled++;const good=order[+s.dataset.p-1]===+c.dataset.i;s.classList.add(good?'ok':'no');if(good)ok++});
+  if(filled<5){fb('pdFb',false,'⏳ Бүх 5 картыг байранд нь тавиарай. ('+filled+'/5)');return}
+  if(ok===5){fb('pdFb',true,'🥇🥈🥉 Гайхалтай! '+order.map(i=>R.e[i][1]).join(R.dir>0?' &gt; ':' &lt; '));award(5);confetti(130)}
+  else fb('pdFb',false,'🤔 '+ok+'/5 зөв. Улаан байруудыг дахин жишээрэй. '+(R.dir<0?'Гүйлтэд бага нь түрүүлнэ!':''))};
+$('pdRst').onclick=pdReset;
+document.querySelectorAll('#pdEv [data-r]').forEach(b=>b.onclick=()=>{pdR=+b.dataset.r;document.querySelectorAll('#pdEv [data-r]').forEach(x=>x.classList.toggle('on',x===b));pdReset()});
+pdReset();
+
+/* ================= Differentiation ================= */
+let eA='0.6',eB='0.8',eStreak=0,eLock=false;
+function eNew(){const w=ri(0,9),len=ri(1,2);const mk=()=>w+'.'+(len===1?String(ri(1,9)):String(ri(1,9))+String(ri(1,9)));eA=mk();eB=Math.random()<.12?eA:mk();
+  if(eB===eA&&Math.random()<.5)eB=mk();$('eA').textContent=eA;$('eB').textContent=eB;$('eS').textContent='?';fb('eFb',null,'');eLock=false}
+document.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{if(eLock)return;const r=signOf(cmp(eA,eB));$('eS').textContent=b.dataset.e;
+  if(b.dataset.e===r){eStreak++;eLock=true;fb('eFb',true,'🎉 Зөв! '+eA+' '+r+' '+eB);if(eStreak%5===0)confetti(50);setTimeout(eNew,1100)}
+  else{eStreak=0;fb('eFb',false,'🤔 Аравны хэсгээс эхлэн жишээд дахин оролд.')}$('eStreak').textContent=eStreak});
+$('eNew').onclick=eNew;eNew();
+
+const HP=[{l:'2.*5',op:'>',r:'2.05'},{l:'3.58',op:'<',r:'3.*8'},{l:'4.96',op:'<',r:'*.96'},{l:'0.732',op:'>',r:'0.7*9'}];
+let hi=0,hFound=new Set(),hValid=[];
+function hTest(p,d){const l=p.l.replace('*',d),r=p.r.replace('*',d),c=cmp(l,r);return p.op==='>'?c>0:c<0}
+function hShowPuz(d){const p=HP[hi];const f=s=>s.replace('*',d==null?'<span class="star">∗</span>':`<span class="star">${d}</span>`);$('hPuz').innerHTML=f(p.l)+' '+(p.op==='>'?'&gt;':'&lt;')+' '+f(p.r)}
+function hLoad(){const p=HP[hi];hFound=new Set();hValid=[];for(let d=0;d<10;d++)if(hTest(p,d))hValid.push(d);$('hTot').textContent=hValid.length;$('hFound').textContent=0;hShowPuz(null);fb('hFb',null,'Цифр сонгоод тэнцэтгэл биш үнэн эсэхийг шалга. Бүх тохирох цифрийг ол!');
+  const k=$('hKeys');k.innerHTML='';for(let d=0;d<10;d++){const b=document.createElement('button');b.textContent=d;b.onclick=()=>{hShowPuz(d);const ok=hTest(p,d);b.className=ok?'ok':'no';
+    if(ok){hFound.add(d);fb('hFb',true,'✅ '+d+' тохирно!');if(hFound.size===hValid.length){fb('hFb',true,'🏆 Бүгдийг оллоо: '+hValid.join(', '));confetti(70)}}
+    else fb('hFb',false,'✖ '+d+' тохирохгүй — тэнцэтгэл биш худал болно.');$('hFound').textContent=hFound.size};k.appendChild(b)}}
+$('hShow').onclick=()=>fb('hFb',true,'👀 Тохирох цифрүүд: '+hValid.join(', '));
+$('hNext').onclick=()=>{hi=(hi+1)%HP.length;hLoad()};hLoad();
+
+/* ================= Exit check ================= */
+const xOk={};function xMark(k,v){xOk[k]=v;const n=Object.values(xOk).filter(Boolean).length;$('xScore').textContent=n+' / 4';if(n===4)confetti(150)}
+$('x1').querySelectorAll('.pick').forEach(b=>b.onclick=()=>{b.classList.toggle('on');b.classList.remove('ok','no')});
+$('x1c').onclick=()=>{let good=true;$('x1').querySelectorAll('.pick').forEach(b=>{const big=cmp(b.textContent,'0.6')>0,on=b.classList.contains('on');b.classList.remove('ok','no');if(on)b.classList.add(big?'ok':'no');if(on!==big)good=false});
+  fb('x1f',good,good?'🎉 Зөв! 0.8 ба 0.67 нь 0.6-аас их.':'🤔 Дахин хар: 0.6 = 0.60. Аравны хэсгийг жиш.');xMark(1,good)};
+[['x2','x2f','🎉 Зөв! 8.65 &lt; 8.7 — Ану хурдан.','🤔 8.7 = 8.70. Гүйлтэд бага нь ялна!'],['x3','x3f','🎉 Зөв! 0.5 = 0.50 &gt; 0.45','🤔 Урт тоо их биш! 0.5 = 0.50 гэж бодоорой.']].forEach(([id,f,okm,nom],qi)=>{
+  $(id).querySelectorAll('.pick').forEach(b=>b.onclick=()=>{const ok=b.dataset.a==='1';$(id).querySelectorAll('.pick').forEach(x=>x.classList.remove('ok','no'));b.classList.add(ok?'ok':'no');fb(f,ok,ok?okm:nom);xMark(qi+2,ok)})});
+$('x4c').onclick=()=>{const v=$('x4').value.trim().replace(',','.');const valid=/^\d+(\.\d+)?$/.test(v);const ok=valid&&cmp(v,'3.4')>0&&cmp(v,'3.5')<0;
+  $('x4').className='inp '+(ok?'ok':'no');fb('x4f',ok,ok?'🎉 Зөв! 3.4 &lt; '+v+' &lt; 3.5':'🤔 3.40 ба 3.50-ын хооронд байх тоо бич (жишээ нь 3.4_ _).');xMark(4,ok)};
+$('x4').addEventListener('keydown',e=>{if(e.key==='Enter')$('x4c').click()});
+
+/* ================= Stars ================= */
+(()=>{const b=[...document.querySelectorAll('#stars3 button')];const set=n=>{b.forEach((x,i)=>x.classList.toggle('on',i<n));store.set('m_dec_stars',n)};b.forEach((x,i)=>x.onclick=()=>{set(i+1);if(i===2)confetti(60)});set(+(store.get('m_dec_stars')||0))})();
+
+/* ================= Confetti: medals + lane stripes ================= */
+const cf=$('confetti'),cfx=cf.getContext('2d');let parts=[],cRun=false;
+function confetti(n){cf.width=innerWidth;cf.height=innerHeight;const cols=['#f2b705','#a9b3bd','#c27a3a','#ffffff','#c63f2c','#2f8f3a'];
+  for(let i=0;i<n;i++)parts.push({x:innerWidth/2+rnd(-160,160),y:innerHeight*.45,vx:rnd(-7,7),vy:-rnd(4,18),s:rnd(8,14),c:cols[i%6],k:i%6,r:rnd(0,6),life:130});
+  if(!cRun){cRun=true;requestAnimationFrame(cStep)}}
+function cStep(){cfx.clearRect(0,0,cf.width,cf.height);parts.forEach(p=>{p.vy+=.4;p.x+=p.vx;p.y+=p.vy;p.r+=.12;p.life--;cfx.save();cfx.translate(p.x,p.y);cfx.rotate(p.r);
+    if(p.k<3){cfx.fillStyle='#1f5fa8';cfx.fillRect(-p.s/4,-p.s*1.3,p.s/2,p.s*.8);cfx.beginPath();cfx.arc(0,0,p.s/2,0,Math.PI*2);cfx.fillStyle=p.c;cfx.fill();cfx.strokeStyle='rgba(0,0,0,.25)';cfx.lineWidth=1.5;cfx.stroke()}
+    else{cfx.fillStyle=p.c;cfx.fillRect(-p.s/2,-p.s/6,p.s,p.s/3)}cfx.restore()});
+  parts=parts.filter(p=>p.life>0&&p.y<cf.height+20);if(parts.length)requestAnimationFrame(cStep);else{cRun=false;cfx.clearRect(0,0,cf.width,cf.height)}}
+
+go(0);
+</script>
+<script>/* auto-fit: слайд дэлгэцэнд багтахгүй бол агуулгыг бага зэрэг жижигрүүлнэ */
+(function(){function fit(){document.querySelectorAll('.slide').forEach(function(s){var k=[].slice.call(s.children);k.forEach(function(c){c.style.zoom=''});if(!s.clientHeight)return;var z=1;while(s.scrollHeight-s.clientHeight>2&&z>0.8){z-=0.02;k.forEach(function(c){c.style.zoom=z})}})}
+var o=window.go;if(typeof o==='function'){window.go=function(){var r=o.apply(this,arguments);fit();return r}}window.addEventListener('resize',function(){setTimeout(fit,50)});setTimeout(fit,300)})();</script>
+</body>
+</html>
